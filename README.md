@@ -18,8 +18,7 @@ This allocator pre-allocates a single contiguous block of memory during startup.
 
 ## How It Works (The Metaphor)
 
-Imagine a hotel where guests constantly check in and out for 5 seconds at a time. 
-
+Imagine a hotel where guests constantly check in and out for 5 seconds at a time:
 * **Standard `malloc`:** The hotel clerk searches the entire building every single time to find a free room, leaving empty spaces spread all over different floors.
 * **Memory Pool Allocator:** The hotel keeps a neatly organized ring of identical keycards ready on the front desk. When a guest arrives, the clerk hands them the top keycard instantly without walking the hallway.
 
@@ -40,22 +39,33 @@ Tested on 100,000 allocations/deallocations of 64-byte game objects:
 
 | Allocator Type | Allocation Time (ms) | Cache Misses (Relative) |
 | :--- | :--- | :--- |
-| `std::allocator` / `malloc` | ~14.2 ms | Baseline (High) |
-| **Custom Memory Pool** | **~2.1 ms (~6.7x faster)** | **L1/L2 Friendly (Low)** |
+| `std::allocator` / `malloc` | ~14.2 ms | High |
+| **Custom Memory Pool** | **~2.1 ms (~6.7x faster)** | **L1/L2 Cache Friendly (Low)** |
 
 ---
 
-## How to Build & Run
+## Code Example
 
-### Prerequisites
-- C++20 compatible compiler (MSVC 2019+, GCC 10+, or Clang 11+)
-- CMake 3.20+
+```cpp
+#include "MemoryPool.hpp"
+#include <iostream>
 
-### Build Instructions
-```bash
-git clone [https://github.com/YOUR_USERNAME/cpp20-memory-pool-allocator.git](https://github.com/YOUR_USERNAME/cpp20-memory-pool-allocator.git)
-cd cpp20-memory-pool-allocator
-mkdir build && cd build
-cmake ..
-cmake --build .
-./MemoryPoolBenchmark
+struct Particle {
+    float x, y, z;
+    float vx, vy, vz;
+    float lifetime;
+};
+
+int main() {
+    // Create a pool holding up to 10,000 Particle objects
+    MemoryPool<Particle, 10000> particlePool;
+
+    // Allocate a particle in O(1) time
+    Particle* p = particlePool.allocate();
+    p->x = 10.0f;
+
+    // Deallocate in O(1) time
+    particlePool.deallocate(p);
+
+    return 0;
+}
